@@ -1,8 +1,10 @@
 import cloudbase from '@cloudbase/node-sdk'
+import { resolveGenerateOptions } from './direct-generate-lib.js'
 
-const prompt = process.argv[2]
-const size = process.argv[3] || '1024x1024'
-const footnote = process.argv[4] ?? process.env.FOOTNOTE ?? ' '
+const { prompt, size, footnote } = resolveGenerateOptions({
+  argv: process.argv.slice(2),
+  env: process.env
+})
 const env = process.env.ENV_ID
 const accessKey = process.env.CLOUDBASE_APIKEY
 
@@ -15,7 +17,7 @@ if (!accessKey) {
 }
 
 if (!prompt) {
-  throw new Error('Usage: node direct-generate.js "your prompt" [size]')
+  throw new Error('Usage: node direct-generate.js "your prompt" [size] [footnote]\n   or: node direct-generate.js --prompt-file <file> [size] [footnote]')
 }
 
 const app = cloudbase.init({ env })
