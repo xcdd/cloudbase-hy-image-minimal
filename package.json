@@ -1,0 +1,12 @@
+{
+  "name": "cloudbase-hy-image-minimal",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/generateImage.test.js"
+  },
+  "dependencies": {
+    "@cloudbase/node-sdk": "^3.18.3"
+  }
+}
