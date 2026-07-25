@@ -4,10 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test test/generateImage.test.js"
+    "start": "node server.js",
+    "test": "node --test"
   },
   "dependencies": {
     "@cloudbase/node-sdk": "^3.18.3",
+    "express": "^5.1.0",
+    "lucide": "^1.26.0",
     "ws": "^8.18.3"
   }
 }

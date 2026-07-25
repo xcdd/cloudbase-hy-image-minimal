@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <link rel="icon" href="data:,">
+  <title>CloudBase AI Control</title>
+  <link rel="stylesheet" href="/assets/styles.css?v=2">
+</head>
+<body>
+  <section class="login-view" id="login-view" aria-labelledby="login-title">
+    <div class="login-shell">
+      <header class="login-brand">
+        <span class="brand-mark" aria-hidden="true"><i data-lucide="key-round"></i></span>
+        <div>
+          <strong>CloudBase AI</strong>
+          <span>Service Control</span>
+        </div>
+      </header>
+      <form class="login-form" id="login-form">
+        <p class="section-code">ADMIN / 01</p>
+        <h1 id="login-title">管理登录</h1>
+        <label for="admin-password">管理员密码</label>
+        <div class="password-field">
+          <input id="admin-password" name="password" type="password" autocomplete="current-password" required autofocus>
+          <button class="icon-button field-action" id="toggle-password" type="button" aria-label="显示密码" title="显示密码">
+            <i data-lucide="eye"></i>
+          </button>
+        </div>
+        <p class="form-error" id="login-error" role="alert"></p>
+        <button class="primary-button full-button" type="submit">
+          <i data-lucide="log-in"></i>
+          <span>进入控制台</span>
+        </button>
+      </form>
+      <footer class="login-footer"><span>SECURE SESSION</span><span><span id="login-port">--</span> / HTTP</span></footer>
+    </div>
+  </section>
+
+  <div class="dashboard" id="dashboard-view" hidden>
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <span class="brand-mark compact" aria-hidden="true"><i data-lucide="key-round"></i></span>
+        <div><strong>CloudBase AI</strong><span>Control</span></div>
+      </div>
+      <nav aria-label="管理导航">
+        <a class="nav-item active" href="#credentials" aria-current="page">
+          <i data-lucide="shield-keyhole"></i><span>CloudBase 凭据</span>
+        </a>
+        <a class="nav-item" href="#keys">
+          <i data-lucide="key"></i><span>接口访问密钥</span>
+        </a>
+      </nav>
+      <div class="sidebar-status">
+        <span class="status-light"></span>
+        <div><strong>服务在线</strong><span>hunyuan-v3</span></div>
+      </div>
+    </aside>
+
+    <main class="workspace">
+      <header class="workspace-header">
+        <div>
+          <p class="section-code">UPSTREAM / CREDENTIALS</p>
+          <h1>CloudBase 凭据</h1>
+        </div>
+        <div class="header-actions">
+          <button class="icon-button" id="refresh-button" type="button" aria-label="刷新" title="刷新">
+            <i data-lucide="refresh-cw"></i>
+          </button>
+          <button class="icon-button" id="logout-button" type="button" aria-label="退出登录" title="退出登录">
+            <i data-lucide="log-out"></i>
+          </button>
+        </div>
+      </header>
+
+      <section class="credential-section" id="credentials" aria-labelledby="credential-title">
+        <div class="credential-heading">
+          <div>
+            <h2 id="credential-title">上游调用凭据</h2>
+            <span>用于服务端 CloudBase SDK 调用</span>
+          </div>
+          <span class="status-badge disabled" id="credential-status">未配置</span>
+        </div>
+        <form class="credential-form" id="credential-form">
+          <div class="credential-fields">
+            <label>
+              <span>环境 ID</span>
+              <input id="credential-env-id" maxlength="40" autocomplete="off" placeholder="例如：cloud1-xxxxxxxx">
+            </label>
+            <label>
+              <span>CLOUDBASE_APIKEY</span>
+              <div class="password-field">
+                <input id="credential-access-key" type="password" maxlength="4096" autocomplete="new-password" placeholder="输入凭据">
+                <button class="icon-button field-action" id="toggle-credential" type="button" aria-label="显示输入内容" title="显示输入内容">
+                  <i data-lucide="eye"></i>
+                </button>
+              </div>
+            </label>
+          </div>
+          <div class="credential-current">
+            <span>当前保存值</span>
+            <code id="credential-masked">未配置</code>
+          </div>
+          <p class="form-error" id="credential-error" role="alert"></p>
+          <div class="credential-actions">
+            <span id="credential-updated">尚未保存</span>
+            <button class="primary-button" type="submit"><i data-lucide="save"></i><span>保存凭据</span></button>
+          </div>
+        </form>
+      </section>
+
+      <section class="metric-strip" aria-label="密钥概览">
+        <div><span>全部密钥</span><strong id="metric-total">0</strong></div>
+        <div><span>已启用</span><strong id="metric-active">0</strong></div>
+        <div><span>接口端口</span><strong id="metric-port">--</strong></div>
+      </section>
+
+      <section class="key-section" id="keys" aria-labelledby="key-table-title">
+        <div class="table-toolbar">
+          <div>
+            <h2 id="key-table-title">接口访问密钥</h2>
+            <span id="key-count">0 项</span>
+          </div>
+          <div class="table-actions">
+            <label class="search-field">
+              <i data-lucide="search"></i>
+              <span class="sr-only">搜索密钥</span>
+              <input id="key-search" type="search" placeholder="搜索名称或前缀" autocomplete="off">
+            </label>
+            <button class="primary-button" id="new-key-button" type="button">
+              <i data-lucide="plus"></i><span>新建密钥</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>名称</th><th>密钥前缀</th><th>状态</th><th>更新时间</th><th><span class="sr-only">操作</span></th></tr></thead>
+            <tbody id="key-table-body"></tbody>
+          </table>
+          <div class="empty-state" id="empty-state" hidden>
+            <i data-lucide="key-square"></i>
+            <strong>暂无访问密钥</strong>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="key-dialog" class="modal">
+    <form id="key-form" method="dialog">
+      <div class="modal-header">
+        <div><p class="section-code" id="key-dialog-code">KEY / NEW</p><h2 id="key-dialog-title">新建密钥</h2></div>
+        <button class="icon-button" data-close="key-dialog" type="button" aria-label="关闭" title="关闭"><i data-lucide="x"></i></button>
+      </div>
+      <input id="key-id" type="hidden">
+      <label for="key-name">名称</label>
+      <input id="key-name" maxlength="80" required placeholder="例如：Claude Desktop">
+      <label for="key-secret">自定义密钥</label>
+      <input id="key-secret" minlength="16" maxlength="256" autocomplete="off" placeholder="留空自动生成">
+      <label class="toggle-row" id="enabled-row">
+        <span><strong>启用密钥</strong><small>允许 API 请求</small></span>
+        <input id="key-enabled" type="checkbox" checked>
+      </label>
+      <label class="toggle-row" id="rotate-row">
+        <span><strong>轮换密钥</strong><small>保存后旧密钥失效</small></span>
+        <input id="key-rotate" type="checkbox">
+      </label>
+      <p class="form-error" id="key-form-error" role="alert"></p>
+      <div class="modal-actions">
+        <button class="secondary-button" data-close="key-dialog" type="button">取消</button>
+        <button class="primary-button" type="submit"><i data-lucide="save"></i><span>保存</span></button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="secret-dialog" class="modal compact-modal">
+    <div class="modal-header">
+      <div><p class="section-code">KEY / READY</p><h2>密钥已生成</h2></div>
+      <button class="icon-button" data-close="secret-dialog" type="button" aria-label="关闭" title="关闭"><i data-lucide="x"></i></button>
+    </div>
+    <label for="generated-secret">密钥明文</label>
+    <div class="secret-output">
+      <input id="generated-secret" readonly>
+      <button class="icon-button" id="copy-secret" type="button" aria-label="复制密钥" title="复制密钥"><i data-lucide="copy"></i></button>
+    </div>
+    <div class="single-use-note"><i data-lucide="shield-check"></i><span>明文仅显示一次</span></div>
+    <div class="modal-actions"><button class="primary-button" data-close="secret-dialog" type="button">完成</button></div>
+  </dialog>
+
+  <dialog id="delete-dialog" class="modal compact-modal">
+    <div class="modal-header">
+      <div><p class="section-code danger-code">KEY / DELETE</p><h2>删除密钥</h2></div>
+      <button class="icon-button" data-close="delete-dialog" type="button" aria-label="关闭" title="关闭"><i data-lucide="x"></i></button>
+    </div>
+    <p class="delete-copy">确认删除 <strong id="delete-key-name"></strong>？</p>
+    <div class="modal-actions">
+      <button class="secondary-button" data-close="delete-dialog" type="button">取消</button>
+      <button class="danger-button" id="confirm-delete" type="button"><i data-lucide="trash-2"></i><span>删除</span></button>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="/vendor/lucide.js"></script>
+  <script src="/assets/admin.js?v=2" type="module"></script>
+</body>
+</html>
