@@ -5,7 +5,7 @@ import path from 'node:path'
 import test from 'node:test'
 
 import { createHttpService } from '../app.js'
-import { normalizeChatInput } from '../cloudbase-ai.js'
+import { createAiOperations, normalizeChatInput } from '../cloudbase-ai.js'
 import { createMemoryCredentialStore } from '../credential-store.js'
 import { createFileKeyStore, createMemoryKeyStore } from '../key-store.js'
 
@@ -32,6 +32,85 @@ test('thinking defaults on and recognizes common client disable formats', () => 
       enable_thinking: false
     })
   }
+})
+
+test('chat operations retry one opaque 429 but not explicit quota errors', async () => {
+  const upstream = {
+    id: 'chatcmpl-retried',
+    choices: [{ message: { role: 'assistant', content: 'ok' }, finish_reason: 'stop' }]
+  }
+  let calls = 0
+  const operations = createAiOperations({
+    ai: createFakeAi({
+      createModel() {
+        return {
+          async generateText() {
+            calls += 1
+            if (calls === 1) {
+              throw Object.assign(new Error('Request failed with status code 429'), { code: '429' })
+            }
+            return { rawResponses: [upstream] }
+          }
+        }
+      }
+    }),
+    retryDelayMs: 0
+  })
+
+  assert.deepEqual(await operations.generateChatCompletion({
+    model: 'hy3',
+    messages: [{ role: 'user', content: 'hello' }]
+  }), upstream)
+  assert.equal(calls, 2)
+
+  let streamCalls = 0
+  const streamResult = { dataStream: asyncIterable([]) }
+  const streamOperations = createAiOperations({
+    ai: createFakeAi({
+      createModel() {
+        return {
+          async streamText() {
+            streamCalls += 1
+            if (streamCalls === 1) {
+              throw Object.assign(new Error('Request failed with status code 429'), { code: '429' })
+            }
+            return streamResult
+          }
+        }
+      }
+    }),
+    retryDelayMs: 0
+  })
+
+  assert.equal(await streamOperations.streamChatCompletion({
+    model: 'hy3',
+    messages: [{ role: 'user', content: 'hello' }]
+  }), streamResult)
+  assert.equal(streamCalls, 2)
+
+  const quotaError = Object.assign(new Error('daily quota exhausted'), {
+    code: 'EXCEED_RATE_LIMIT'
+  })
+  let quotaCalls = 0
+  const quotaOperations = createAiOperations({
+    ai: createFakeAi({
+      createModel() {
+        return {
+          async generateText() {
+            quotaCalls += 1
+            throw quotaError
+          }
+        }
+      }
+    }),
+    retryDelayMs: 0
+  })
+
+  await assert.rejects(() => quotaOperations.generateChatCompletion({
+    model: 'hy3',
+    messages: [{ role: 'user', content: 'hello' }]
+  }), quotaError)
+  assert.equal(quotaCalls, 1)
 })
 
 test('file key store preserves keys across service restarts without storing plaintext', async (t) => {

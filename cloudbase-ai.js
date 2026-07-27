@@ -3,10 +3,12 @@ import crypto from 'node:crypto'
 export const DEFAULT_CHAT_PROVIDER = 'hunyuan-v3'
 export const DEFAULT_CHAT_MODELS = ['hy3', 'hy3-preview']
 export const DEFAULT_IMAGE_MODEL = 'HY-Image-3.0-Plus-4090-Tob-v1.0'
+const TRANSIENT_RATE_LIMIT_RETRY_DELAY_MS = 750
 
 export function createAiOperations({
   ai,
-  chatProvider = DEFAULT_CHAT_PROVIDER
+  chatProvider = DEFAULT_CHAT_PROVIDER,
+  retryDelayMs = TRANSIENT_RATE_LIMIT_RETRY_DELAY_MS
 }) {
   if (!ai) {
     throw new Error('`ai` is required')
@@ -27,12 +29,16 @@ export function createAiOperations({
 
   return {
     async generateChatCompletion(input) {
-      const result = await getChatModel().generateText({
+      const modelInput = {
         ...normalizeChatInput(input),
         // Tool execution belongs to the OpenAI client. One step returns the
         // model's tool_calls instead of asking the SDK to execute unknown tools.
         maxSteps: 1
-      })
+      }
+      const result = await retryOpaqueRateLimit(
+        () => getChatModel().generateText(modelInput),
+        retryDelayMs
+      )
       const rawResponse = result.rawResponses?.at(-1)
 
       if (!rawResponse) {
@@ -43,16 +49,45 @@ export function createAiOperations({
     },
 
     async streamChatCompletion(input) {
-      return getChatModel().streamText({
+      const modelInput = {
         ...normalizeChatInput(input),
         maxSteps: 1
-      })
+      }
+      return retryOpaqueRateLimit(
+        () => getChatModel().streamText(modelInput),
+        retryDelayMs
+      )
     },
 
     generateImage(input) {
       return getImageModel().generateImage(input)
     }
   }
+}
+
+async function retryOpaqueRateLimit(operation, delayMs) {
+  try {
+    return await operation()
+  } catch (error) {
+    if (!isOpaqueRateLimit(error)) throw error
+    await delay(Math.max(0, delayMs))
+    return operation()
+  }
+}
+
+function isOpaqueRateLimit(error) {
+  const code = typeof error?.code === 'string' ? error.code : ''
+  const upstreamCode = error?.response?.data?.code
+  const status = error?.status ?? error?.response?.status ?? (/^\d{3}$/.test(code) ? Number(code) : undefined)
+  const hasExplicitLimitCode = [code, upstreamCode].some((value) => {
+    return typeof value === 'string' && /(CONCURRENT|QUOTA|RATE_LIMIT)/i.test(value)
+  })
+
+  return status === 429 && !hasExplicitLimitCode
+}
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 export function normalizeChatInput(input) {

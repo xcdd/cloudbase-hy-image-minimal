@@ -20,7 +20,7 @@ if (!prompt) {
   throw new Error('Usage: node direct-generate.js "your prompt" [size] [footnote]\n   or: node direct-generate.js --prompt-file <file> [size] [footnote]')
 }
 
-const app = cloudbase.init({ env })
+const app = cloudbase.init({ env, accessKey })
 const ai = app.ai()
 const imageModel = ai.createImageModel('hunyuan-image')
 
