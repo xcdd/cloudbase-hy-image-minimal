@@ -118,18 +118,40 @@ $env:ADMIN_SESSION_SECRET="至少三十二个字符的随机签名密钥"
 npm start
 ```
 
-服务默认监听 `http://localhost:8080`，健康检查地址为：
+直接运行 `npm start` 且未设置 `PORT` 时，服务默认监听
+`http://localhost:8080`。通过 systemd 运行的本机实例会读取
+`.service.env`，当前监听 `http://localhost:52557`。
+
+调用前建议按实际部署地址设置基础 URL。本机 systemd 实例使用：
+
+```bash
+export BASE_URL=http://localhost:52557
+```
+
+直接使用默认配置运行 `npm start` 时则使用：
+
+```bash
+export BASE_URL=http://localhost:8080
+```
+
+健康检查地址为：
 
 ```text
 GET /healthz
 ```
 
+例如：
+
+```bash
+curl "$BASE_URL/healthz"
+```
+
 ### Web 管理后台
 
-浏览器打开：
+本机 systemd 实例在浏览器中打开：
 
 ```text
-http://localhost:8080/
+http://localhost:52557/
 ```
 
 后台首先用于保存和查看脱敏后的 CloudBase 上游凭据，同时支持新建、编辑、启停、轮换和删除业务访问密钥。业务访问密钥只保存 SHA-256 摘要，创建或轮换后的明文仅返回一次。
@@ -153,7 +175,7 @@ POST /v1/ai/cloudbase/chat/completions
 非流式示例：
 
 ```bash
-curl http://localhost:8080/v1/chat/completions \
+curl "$BASE_URL/v1/chat/completions" \
   -H 'Authorization: Bearer 你的SERVICE_API_KEY' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -166,7 +188,7 @@ curl http://localhost:8080/v1/chat/completions \
 流式示例：
 
 ```bash
-curl -N http://localhost:8080/v1/chat/completions \
+curl -N "$BASE_URL/v1/chat/completions" \
   -H 'Authorization: Bearer 你的SERVICE_API_KEY' \
   -H 'Content-Type: application/json' \
   -H 'Accept: text/event-stream' \
@@ -226,7 +248,7 @@ apiKey = SERVICE_API_KEY
 ### 同一服务内生成图片
 
 ```bash
-curl http://localhost:8080/v1/images/generations \
+curl "$BASE_URL/v1/images/generations" \
   -H 'Authorization: Bearer 你的SERVICE_API_KEY' \
   -H 'Content-Type: application/json' \
   -d '{
